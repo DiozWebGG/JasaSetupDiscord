@@ -40,6 +40,87 @@
             margin: 0 auto;
         }
 
+        /* Password Overlay Styling */
+        #authOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .auth-box {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            text-align: center;
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .auth-box h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .auth-box h2 i {
+            color: var(--primary);
+        }
+
+        .auth-box input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--bg-dark);
+            color: #fff;
+            outline: none;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
+
+        .auth-box button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .auth-box button:hover {
+            background: #4752c4;
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Dashboard Content hidden by default until authenticated */
+        #dashboardContent {
+            display: none;
+        }
+
         .header-title {
             display: flex;
             align-items: center;
@@ -214,18 +295,36 @@
         .btn-delete:hover { background: rgba(255,255,255,0.2); color: #fff; }
 
         .copy-btn {
-            background: transparent;
-            border: none;
+            background: rgba(88, 101, 242, 0.15);
+            border: 1px solid rgba(88, 101, 242, 0.3);
             color: var(--primary);
             cursor: pointer;
-            margin-left: 5px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-left: 6px;
+            font-size: 12px;
         }
-        .copy-btn:hover { color: #fff; }
+        .copy-btn:hover { 
+            background: var(--primary);
+            color: #fff; 
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
+<!-- System Password Overlay -->
+<div id="authOverlay">
+    <div class="auth-box">
+        <h2><i class="fa-solid fa-lock"></i> Owner Access</h2>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Masukkan system password untuk melanjutkan.</p>
+        <input type="password" id="passwordInput" placeholder="Password..." onkeypress="checkEnter(event)">
+        <button onclick="verifyPassword()">Masuk</button>
+        <div id="errorMsg" class="error-msg">Password salah! Silakan coba lagi.</div>
+    </div>
+</div>
+
+<!-- Main Dashboard Content -->
+<div id="dashboardContent" class="container">
     <div class="header-title">
         <h1><i class="fa-solid fa-shield-halved"></i> Dashboard Owner</h1>
         <span style="font-size: 13px; color: var(--text-muted);"><i class="fa-solid fa-rotate"></i> Sync Real-time Active</span>
@@ -295,6 +394,41 @@
         </table>
     </div>
 </div>
+
+<script>
+    const SYSTEM_PASSWORD = '4318';
+
+    // Cek apakah sudah login di sesi sebelumnya
+    window.addEventListener('DOMContentLoaded', () => {
+        if (sessionStorage.getItem('owner_authenticated') === 'true') {
+            unlockDashboard();
+        }
+    });
+
+    function verifyPassword() {
+        const inputVal = document.getElementById('passwordInput').value;
+        const errorMsg = document.getElementById('errorMsg');
+
+        if (inputVal === SYSTEM_PASSWORD) {
+            sessionStorage.setItem('owner_authenticated', 'true');
+            unlockDashboard();
+        } else {
+            errorMsg.style.display = 'block';
+            document.getElementById('passwordInput').value = '';
+        }
+    }
+
+    function checkEnter(event) {
+        if (event.key === 'Enter') {
+            verifyPassword();
+        }
+    }
+
+    function unlockDashboard() {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+    }
+</script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -366,7 +500,7 @@
             </td>
             <td>
                 <span title="${item.proof}">${item.proof.length > 25 ? item.proof.substring(0, 25) + '...' : item.proof}</span>
-                <button class="copy-btn" onclick="copyText('${item.proof}')" title="Salin Bukti"><i class="fa-regular fa-copy"></i></button>
+                <button class="copy-btn" onclick="copyText('${item.proof}')" title="Salin Bukti Pembayaran"><i class="fa-regular fa-copy"></i></button>
             </td>
             <td>${badgeHtml}</td>
             <td>
